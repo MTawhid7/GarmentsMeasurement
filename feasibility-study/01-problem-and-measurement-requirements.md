@@ -1,8 +1,35 @@
 # 01 — Problem Formulation and Metrological Requirements
 
-## 1. Reframing Garment QC: From Computer Vision to Dimensional Metrology
+## 1. The Industrial QC Business Problem: Human Inconsistency & Throughput
 
-In industrial manufacturing, quality control (QC) is not a visual recognition task; it is a **conformity assessment process** governed by mathematical decision rules. 
+In apparel manufacturing, finished garment inspection represents one of the largest labor bottlenecks and sources of commercial risk:
+1. **The Throughput Constraint:** A certified Quality Control (QC) inspector measuring a garment manually with a flexible steel or fiberglass tape takes approximately **$45\text{ to }60\text{ seconds}$** to measure a standard 10-to-15 Point of Measure (POM) specification sheet. At this rate, an inspector can check at most $60\text{ to }80$ garments per hour. On an industrial sewing floor producing $5,000\text{ to }20,000$ units per day, inspecting $100\%$ of production units manually is economically impossible.
+2. **The Reliance on Statistical Sampling (AQL):** Consequently, apparel factories rely strictly on statistical acceptance sampling under **ISO 2859-1 / ANSI/ASQ Z1.4 (Acceptable Quality Limit - AQL)**. Under typical Normal Single Sampling (General Inspection Level II, AQL 2.5/4.0), only $32\text{ to }125$ garments are inspected from a lot of thousands. If a batch contains isolated defect clusters (e.g., a single sewing operator tensioning cuffs improperly or a mis-calibrated cutting knife on one ply stack), defective garments inevitably escape undetected into shipping containers.
+3. **Human Measurement Inconsistency:** Human measurement is notoriously variable. Even among trained inspectors, measurements differ significantly due to:
+   - Differences in manual fabric smoothing tension;
+   - Variations in tape alignment and curvature over fabric mounds;
+   - Subjective interpretation of ambiguous tech-pack landmarks;
+   - Visual parallax and transcription errors when recording numbers onto paper or ERP terminals.
+
+```
+       MANUAL QC LIMITATIONS                   THE AUTOMATION GOAL
+ ┌─────────────────────────────────┐     ┌─────────────────────────────────┐
+ │ • 45-60s per garment            │     │ • Rapid acquisition (< 10s)     │
+ │ • Statistical sampling (AQL)    │ ──► │ • Broad / 100% inline coverage  │
+ │ • High inter-operator variance  │     │ • Objective, repeatable data    │
+ │ • Escaped defects & chargebacks │     │ • Instant digital traceability  │
+ └─────────────────────────────────┘     └─────────────────────────────────┘
+```
+
+The business objective is to deploy automated optical measurement to **break the cycle-time barrier** while achieving **sufficient accuracy and repeatability to reduce dependence on manual tape inspection**.
+
+However, automating this process requires answering a strict scientific question: **Can an optical system achieve the measurement uncertainty required by industrial tolerances on flexible, non-rigid textiles?**
+
+---
+
+## 2. Reframing Garment QC: From Computer Vision to Dimensional Metrology
+
+Quality control is not an image-generation or keypoint-detection challenge; it is a **conformity assessment process** governed by mathematical decision theory. 
 
 A garment factory does not need an algorithm that estimates pixel coordinates of "keypoints". It requires:
 1. **Conformity Decisions:** A binary determination for each Point of Measure (POM) on an individual garment: *Conforming* ($y \in [LSL, USL]$) or *Non-Conforming* ($y \notin [LSL, USL]$), where $LSL$ and $USL$ are Lower and Upper Specification Limits, rolled up into an acceptance/rejection decision for an inspection lot.
@@ -33,9 +60,9 @@ Every link in this chain contributes variance. The reported failure of previous 
 
 ---
 
-## 2. What is Being Measured: Points of Measure (POMs) and Standards
+## 3. What is Being Measured: Points of Measure (POMs) and Standards
 
-### 2.1 Authoritative Garment Measurement Standards
+### 3.1 Authoritative Garment Measurement Standards
 
 To determine whether an automated measurement system is viable, the measurand must be defined against international textile standards:
 
@@ -49,7 +76,7 @@ To determine whether an automated measurement system is viable, the measurand mu
 
 - **National and Military Purchase Specifications (e.g., US Army GL/PD 07-13A, GL/PD 14-04A):** Provide explicit contractually binding measurement rules. For example, half-chest is measured "from outside folded edge to opposite outside folded edge, 1 inch below armhole seam", with strict tolerances ($\pm 1/2'' \approx \pm 12.7\text{ mm}$) and tight detail tolerances (e.g., pocket dimensions $-0 / +1/8'' \approx -0 / +3.18\text{ mm}$) `[E, GLPD-07-13A]`.
 
-### 2.2 Formal Conflict Between Standards
+### 3.2 Formal Conflict Between Standards
 
 A critical finding from analyzing these standards is that **international standards disagree on fundamental definitions**:
 - For chest width on a flat garment, **ISO 3759 Clause 7.1.6** mandates measuring *"between seams"*.
@@ -58,14 +85,14 @@ A critical finding from analyzing these standards is that **international standa
 
 An automated inspection system cannot be developed without first specifying which standard governs the contract.
 
-### 2.3 Metrological Taxonomy of Garment Features
+### 3.3 Metrological Taxonomy of Garment Features
 
 For sensing system design, apparel dimensions cannot be categorized merely as "tops vs bottoms". They must be categorized by the **physical observability of their boundary features**:
 
 | Class | Geometric Definition | Representative POMs | Observability in Planar Flat-Lay | Sensing & Algorithmic Challenge |
 |---|---|---|---|---|
-| **P1: Constructed Edge-to-Edge** | Distance between two silhouette boundaries along an axis constructed from an anchor landmark | Chest width ($2.5\text{ cm}$ below armhole), Waist width, Thigh width ($2.5\text{ cm}$ below crotch) | Silhouette edges: Excellent contrast. Constructed position: Ambiguous | Inherits the localization uncertainty of the anchor landmark and the angular error of the datum axis. |
-| **P2: Seam-Anchored Lengths** | Distance from a seam intersection to a silhouette edge or second seam | Front Length (SNP to hem), Inseam (crotch seam to leg hem), Back Rise | Seam intersection: Moderate to Poor. Edge: Excellent | Side Neck Point (SNP) often sits beneath collars or rib trims. Inseam crotch sits inside overlapping fabric folds. |
+| **P1: Constructed Edge-to-Edge** | Distance between two silhouette boundaries along an axis constructed from an anchor landmark | Chest width ($2.5\text{ cm}$ below armhole), Waist width, Thigh width ($2.5\text{ cm}$ below crotch) | Silhouette edges: High contrast. Constructed position: Ambiguous | Inherits the localization uncertainty of the anchor landmark and the angular error of the datum axis. |
+| **P2: Seam-Anchored Lengths** | Distance from a seam intersection to a silhouette edge or second seam | Front Length (SNP to hem), Inseam (crotch seam to leg hem), Back Rise | Seam intersection: Moderate to Poor. Edge: High contrast | Side Neck Point (SNP) often sits beneath collars or rib trims. Inseam crotch sits inside overlapping fabric folds. |
 | **P3: Seam-to-Seam (Declared Ambiguous)** | Distance between two internal seam stitch lines | Across Shoulder, Across Back, Back Neck Width | Seams visible as surface ridges or thread contrast | Extremely sensitive to camera angle, lighting azimuth, and thread-to-fabric contrast. Ambiguous whether edge or seam governs. |
 | **P4: Curved & Diagonal POMs** | Path length along a seam trajectory or straight diagonal between landmarks | Armhole circumference / straight, Raglan sleeve length, Neck drop | Curved trajectory: Moderate. Endpoints: Variable | Requires continuous contour tracking along stitch lines; sensitive to out-of-plane puckering. |
 | **P5: Force-Defined (Extended)** | Distance under a specified tensile load or "maximum extension without breakage" | Waist extended (elastic), Neck stretch, Leg opening stretch | **Zero passive observability** | Cannot be evaluated by passive optical sensing alone; requires mechanical actuation and force sensing. |
@@ -74,9 +101,9 @@ For sensing system design, apparel dimensions cannot be categorized merely as "t
 
 ---
 
-## 3. The Measurand is "Garment + State + Operator", Not "The Garment"
+## 4. The Measurand is "Garment + State + Operator", Not "The Garment"
 
-### 3.1 Definitional Uncertainty (VIM 2.27)
+### 4.1 Definitional Uncertainty (VIM 2.27)
 
 In classical metrology, the *measurand* is the quantity intended to be measured `[E, VIM-2.3]`. VIM explicitly notes that defining a measurand requires stating the physical state of the entity carrying the quantity.
 
@@ -90,7 +117,7 @@ Definitional uncertainty represents the **theoretical minimum uncertainty** that
 
 Then that definition permits multiple physically distinct numerical distances to satisfy the written spec. If that ambiguity span is $2\text{ mm}$, **no neural network or sensor on earth can reduce measurement uncertainty below $2\text{ mm}$**. The error is in the contract, not the camera.
 
-### 3.2 GPS Principles: Complete vs Incomplete Specification Operators
+### 4.2 GPS Principles: Complete vs Incomplete Specification Operators
 
 The Geometrical Product Specification (GPS) standards (ISO 17450-2, ISO 10579) establish a formal framework for eliminating specification ambiguity `[E, ISO17450-2; Nielsen-CIRP]`.
 
@@ -133,7 +160,7 @@ Applied to garment metrology, an incomplete tech-pack POM must be translated int
 
 Transforming garment POMs into complete GPS operators is the single most powerful and cost-effective lever in this entire research study: **it converts an undefined AI estimation problem into a deterministic geometric computation**.
 
-### 3.3 Non-Rigid Parts Metrology: Free State vs Restrained Condition (ISO 10579)
+### 4.3 Non-Rigid Parts Metrology: Free State vs Restrained Condition (ISO 10579)
 
 Mechanical metrology long ago confronted the problem of inspecting flexible components (sheet metal, polymer fascias, rubber seals). **ISO 10579:2010 (*Dimensioning and tolerancing — Non-rigid parts*)** defines:
 - A **non-rigid part** as a component that deforms under its own weight or low handling forces beyond its dimensional tolerances `[E, ISO10579]`.
@@ -144,7 +171,7 @@ Textile garments are extreme non-rigid parts. A garment laid on a flat table is 
 
 ---
 
-## 4. Ground Truth: Design Geometry vs Sewn Garment vs Measured State
+## 5. Ground Truth: Design Geometry vs Sewn Garment vs Measured State
 
 A persistent point of confusion in automated inspection is what constitutes "ground truth". There are three fundamentally distinct geometric entities:
 
@@ -170,7 +197,7 @@ A persistent point of confusion in automated inspection is what constitutes "gro
 
 ---
 
-## 5. Apparel Tolerances and Quality Control Reality
+## 6. Apparel Tolerances and Quality Control Reality
 
 Apparel manufacturing operates on contractual tolerance tables negotiated between fashion brands and OEM factories. Drawing from authoritative military purchase descriptions (GL/PD 07-13A, GL/PD 14-04A), third-party inspection manuals (QIMA), and industrial tech packs, standard tolerances fall into discrete tiers:
 
@@ -183,14 +210,14 @@ Apparel manufacturing operates on contractual tolerance tables negotiated betwee
 | **Construction Details** | Collar Point, Cuff Width, Pocket Placement, Flap Width | $\pm 1/8'' \ (\pm 3.18\text{ mm})$ | $6.35\text{ mm}$ | Fixed across sizes |
 | **Asymmetric Tight Tolerances** | Military ACU Coat Chest Pocket Depth/Width `[GLPD-07-13A]` | $-0 / +1/8'' \ (-0 / +3.18\text{ mm})$ | **$3.18\text{ mm}$ total window** | Fixed |
 
-### 5.1 The Tolerance vs Grade Step Principle
+### 6.1 The Tolerance vs Grade Step Principle
 In garment grading, the tolerance band $T$ must always be smaller than the grade step between adjacent sizes (e.g., Size M to Size L). In standard menswear grading, the half-chest grade step is $2''$ ($50.8\text{ mm}$), while tolerance is $\pm 1/2''$ ($T = 1'' = 25.4\text{ mm}$). 
 - If an automated measurement system exhibits an expanded uncertainty $U \ge 12.7\text{ mm}$, its measurement uncertainty encompasses half the grade step. 
 - Under such uncertainty, a large Size S garment and a small Size M garment become statistically indistinguishable, destroying process capability.
 
 ---
 
-## 6. Formal Metrology Framework: Precision, Trueness, and Uncertainty
+## 7. Formal Metrology Framework: Precision, Trueness, and Uncertainty
 
 Vague statements like "95% accuracy" have zero engineering validity. The metrological performance of the measurement system must be defined under **JCGM 200:2012 (VIM)**, **JCGM 100:2008 (GUM)**, and **ISO 22514-7 / VDA 5**:
 
@@ -218,14 +245,14 @@ Parallax     Algorithm Bias          (Sensor / Algorithm)            (Re-lay / H
 6. **Expanded Uncertainty ($U$):**
    $$U = k \cdot u_c \quad (k = 2 \text{ for } 95.45\% \text{ coverage under normality})$$
 
-### 6.1 Industrial Capability Thresholds: MSA, VDA 5, and JCGM 106
+### 7.1 Industrial Capability Thresholds: MSA, VDA 5, and JCGM 106
 
 How small must $u_c$ or $\sigma$ be relative to the tolerance band $T$? Three primary industrial frameworks define the requirements:
 
 - **AIAG Measurement Systems Analysis (MSA 4th Ed.):**
   $$\%GRR = \frac{6 \cdot \sigma_{MS}}{T} \times 100\%$$
   - $\%GRR < 10\%$: System is acceptable (standard for rigid automotive components).
-  - $10\% \le \%GRR \le 30\%$: Conditionally acceptable based on application criticality.
+  - $10\% \le $\%GRR$ \le 30\%$: Conditionally acceptable based on application criticality.
   - $\%GRR > 30\%$: Strictly unacceptable.
   - Number of Distinct Categories ($ndc = 1.41 \frac{\sigma_{\text{part}}}{\sigma_{MS}} \ge 5$).
 
@@ -238,7 +265,7 @@ How small must $u_c$ or $\sigma$ be relative to the tolerance band $T$? Three pr
 - **JCGM 106:2012 Capability Index ($C_m$):**
   $$C_m = \frac{T}{4 \cdot u_c} \ge 4 \implies u_c \le \frac{T}{16} = 0.0625 \cdot T$$
 
-### 6.2 Required Uncertainty Budget Mapped to Garment Tolerances
+### 7.2 Required Uncertainty Budget Mapped to Garment Tolerances
 
 The table below calculates the exact maximum permissible standard uncertainty ($u$) and standard deviation ($\sigma$) required across garment tolerance classes `[I]`:
 
@@ -259,9 +286,10 @@ The table below calculates the exact maximum permissible standard uncertainty ($
 
 ---
 
-## 7. Conformity Assessment and Decision Risk (JCGM 106)
+## 8. Conformity Assessment, Decision Risk, and the Multi-POM Blind Spot
 
-When measurement uncertainty is non-negligible, every measurement decision entails financial risk. Under **JCGM 106:2012**, conformity assessment defines two forms of risk:
+### 8.1 Single-POM Risk Formulation (JCGM 106)
+Under **JCGM 106:2012**, conformity assessment defines two forms of risk:
 - **Consumer's Risk ($R_C$ / False Accept):** The probability that a non-conforming garment is accepted by the measurement system and shipped to the client, risking brand chargebacks or returns.
 - **Producer's Risk ($R_P$ / False Reject):** The probability that a conforming garment is incorrectly rejected by the measurement system, causing unnecessary rework or scrap.
 
@@ -287,26 +315,35 @@ $$R_C = \int_{|x| > t} \left[ \int_{-t}^{t} \frac{1}{\sqrt{2\pi}u} e^{-\frac{(y-
 
 $$R_P = \int_{-t}^{t} \left[ \int_{|y| > t} \frac{1}{\sqrt{2\pi}u} e^{-\frac{(y-x)^2}{2u^2}} dy \right] \frac{1}{\sqrt{2\pi}\sigma_p} e^{-\frac{(x-\mu_p)^2}{2\sigma_p^2}} dx$$
 
-### 7.1 Quantitative Impact of Uncertainty on Decision Errors
-Monte Carlo numerical integration of the JCGM 106 risk equations demonstrates the severe operational penalty of measurement uncertainty `[I]`:
+### 8.2 The Multi-POM Joint Conformity Stack-Up (The Blind Spot in Previous Work)
 
-| Process State | Relative Uncertainty ($u/t$) | Decision Rule | True Manufacturing Scrap Rate | Falsely Accepted Rate ($R_C$) | Falsely Rejected Rate ($R_P$) | Fraction of Out-of-Spec Shipped |
-|---|---|---|---|---|---|---|
-| $C_p = 1.0$, Centered | $0.10$ ($u = 1.27\text{ mm}$ for $\pm 1/2''$) | Simple ($\pm t$) | $0.27\%$ | $0.07\%$ | $0.20\%$ | $25.9\%$ |
-| $C_p = 1.0$, Centered | $0.20$ ($u = 2.54\text{ mm}$ for $\pm 1/2''$) | Simple ($\pm t$) | $0.27\%$ | $0.09\%$ | $0.83\%$ | $33.3\%$ |
-| $C_p = 1.0$, Centered | $0.20$ | Guarded ($w = 2u$) | $0.27\%$ | **$0.003\%$** | **$12.4\%$** | **$1.1\%$** |
-| $C_p = 1.0$, Off-center ($\mu = +t/2$) | $0.10$ | Simple ($\pm t$) | $6.68\%$ | $1.18\%$ | $2.01\%$ | $17.7\%$ |
-| $C_p = 1.0$, Off-center ($\mu = +t/2$) | $0.20$ | Simple ($\pm t$) | $6.68\%$ | $1.78\%$ | $5.12\%$ | $26.6\%$ |
-| $C_p = 1.0$, Off-center ($\mu = +t/2$) | $0.20$ | Guarded ($w = 2u$) | $6.68\%$ | **$0.05\%$** | **$33.2\%$** | **$0.7\%$** |
-| $C_p = 0.67$ (Marginal), Centered | $0.20$ | Simple ($\pm t$) | $4.55\%$ | $1.12\%$ | $2.94\%$ | $24.6\%$ |
+A critical mathematical flaw in earlier feasibility analyses (including Claude's work) is evaluating decision risk **on each POM in isolation**.
 
-#### Critical Insights for Garment QC:
-- **Guard Banding Destroys Production Throughput at High Uncertainty:** ISO 14253-1 recommends guard bands ($w = U = 2u$) to reduce consumer risk below $2.3\%$. However, if $u/t = 0.20$ ($u = 2.54\text{ mm}$ on $\pm 1/2''$), applying a guard band causes the system to **falsely reject $12\%\text{ to }33\%$ of perfectly good production garments**! In apparel manufacturing, where gross profit margins are $5\%\text{ to }12\%$, such false rejection rates are economically catastrophic.
-- **Uncertainty Must Be Driven Below $0.15 \cdot t$:** Guard bands are only commercially viable if $u/t \le 0.10\text{ to }0.15$ ($u \le 1.3\text{ mm to }1.9\text{ mm}$ for $\pm 1/2''$).
+In commercial apparel manufacturing, an inspection protocol evaluates a vector of $m$ dimensions: $\mathbf{y} = (y_1, y_2, \dots, y_m)^T$. A garment is declared non-conforming if **any single POM falls outside its tolerance band**:
+$$\text{Garment Accept} \iff \bigwedge_{j=1}^m \left( y_j \in [LSL_j, USL_j] \right)$$
+
+Let $R_{P, j}$ be the marginal producer's risk for POM $j$. If measurement errors across POMs are statistically independent (or weakly correlated), the **cumulative probability of falsely rejecting a perfectly conforming garment** is `[I]`:
+
+$$P(\text{False Rejection of Garment}) = 1 - \prod_{j=1}^m (1 - R_{P, j})$$
+
+The table below demonstrates the devastating effect of multi-POM stack-up across typical spec sheet sizes `[I]`:
+
+| Per-POM Marginal False Reject Rate ($R_{P, j}$) | Single POM ($m=1$) | 5 POMs ($m=5$) | 10 POMs ($m=10$) | 15 POMs ($m=15$) | 20 POMs ($m=20$) |
+|---|---|---|---|---|---|
+| **$R_P = 1.0\%$** (Very low individual error) | $1.0\%$ | $4.9\%$ | $9.6\%$ | **$14.0\%$** | **$18.2\%$** |
+| **$R_P = 2.0\%$** (Low individual error) | $2.0\%$ | $9.6\%$ | $18.3\%$ | **$26.1\%$** | **$33.2\%$** |
+| **$R_P = 4.0\%$** (Typical at $u/t = 0.20$) | $4.0\%$ | $18.5\%$ | $33.5\%$ | **$45.8\%$** | **$55.8\%$** |
+| **$R_P = 8.0\%$** (Marginal at $u/t = 0.25$) | $8.0\%$ | $34.1\%$ | $56.6\%$ | **$71.4\%$** | **$81.1\%$** |
+
+#### Catastrophic Industrial Implication:
+If an automated system has a marginal uncertainty ratio $u/t = 0.20$ ($R_P \approx 4\%$), an inspector evaluating a standard 15-POM tech pack will find that **$45.8\%$ of completely good production garments are falsely flagged as defective**!
+- In an apparel factory operating on thin margins, falsely rejecting half the production run shuts down the shipping department.
+- **Core Engineering Mandate:** To be commercially viable across a 15-POM spec, the marginal per-POM false reject rate must be forced below $R_{P, j} \le 0.5\%$, requiring:
+  $$\frac{u}{t} \le \mathbf{0.10\text{ to }0.12} \implies u_c \le \mathbf{1.2\text{ to }1.5\text{ mm for }\pm 1/2''}, \quad u_c \le \mathbf{0.6\text{ to }0.8\text{ mm for }\pm 1/4''}$$
 
 ---
 
-## 8. Deconstructing "80% Accuracy": What Did the Previous Team Experience?
+## 9. Deconstructing "80% Accuracy": What Did the Previous Team Experience?
 
 The previous team reported achieving "~80% accuracy" before stalling. In metrology, "accuracy" without a formal definition is meaningless. We can mathematically model four plausible interpretations of what "80% accuracy" actually meant in practice `[I]`:
 
@@ -331,26 +368,26 @@ The previous team reported achieving "~80% accuracy" before stalling. In metrolo
 
 Under every single statistical interpretation, an "80% accurate" system exhibits standard measurement errors of **$\sigma \approx 5.6\text{ mm to }10\text{ mm}$**. 
 
-Against a $\pm 12.7\text{ mm}$ tolerance, this means the previous system's measurement dispersion was **3 to 5 times larger** than the permissible threshold ($u_c \le 1.9\text{ mm}$). It explains why their keypoints appeared "slightly displaced": the displacement was not a minor sub-pixel artifact, but a macroscopic localization error on the order of centimeters.
+Against a $\pm 12.7\text{ mm}$ tolerance, this means the previous system's measurement dispersion was **3 to 5 times larger** than the permissible threshold ($u_c \le 1.5\text{ mm}$). It explains why their keypoints appeared "slightly displaced": the displacement was not a minor sub-pixel artifact, but a macroscopic localization error on the order of centimeters.
 
 ---
 
-## 9. Operational Scenarios: S-AQL vs S-Inline
+## 10. Operational Scenarios: S-AQL vs S-Inline Sentinel
 
-An automated measurement system must be evaluated within its intended operational deployment scenario:
+To solve both the throughput and accuracy bottlenecks, automated garment measurement must be structured into two distinct operational paradigms:
 
-| Operational Dimension | S-AQL (End-of-Line Quality Audit) | S-Inline (100% Process Screening) |
+| Operational Dimension | Tier 1: S-Inline Sentinel (100% Process Screening) | Tier 2: S-AQL Collaborative (End-of-Line Audit) |
 |---|---|---|
-| **Inspection Sampling Basis** | ISO 2859-1 / ANSI/ASQ Z1.4 Lot Sampling (e.g., Level II, Normal, AQL 2.5/4.0). 20 to 125 garments inspected per batch. | 100% inspection of every garment exiting sewing, washing, or pressing. |
-| **Cycle Time (Takt Time) Budget** | **2 to 5 minutes per garment** is acceptable. Focus is on metrological precision and automated digital reporting. | **5 to 15 seconds per garment** maximum. Must match the conveyor or sewing line takt time. |
-| **Physical Garment Handling** | A trained technician follows an ergonomic, repeatable lay protocol (smoothing passes, alignment lines, edge flattening). | Minimal or automated handling. Garment may arrive warm, crumpled, or unpressed on a conveyor. |
-| **Acceptable System Abstention Rate** | **5% to 15% abstention is acceptable.** If the system flags an ambiguous edge, the inspector measures that POM with a tape. | **< 1% abstention required.** Rejected garments must be automatically diverted without jamming the line. |
-| **POM Scope** | Complete tech-pack spec sheet (12 to 25 POMs, including internal and back POMs). | 3 to 5 critical process-control POMs (e.g., chest width, total length, sleeve length) predictive of cutting/sewing drift. |
-| **Primary Economic Value** | Elimination of manual transcription errors, instant buyer compliance audits, reduction of inspection labor by 70%. | Immediate detection of cutting stack errors or wash shrinkage drift before thousands of units are ruined. |
+| **Inspection Scope** | **100% of all garments** passing on conveyor line. | Statistical sample per AQL table (e.g. 32 to 125 units). |
+| **Cycle Time Target** | **$5\text{ to }8\text{ seconds}$ per garment** (continuous motion). | **$25\text{ to }40\text{ seconds}$ per garment** (semi-automated). |
+| **POM Scope** | **3 to 5 "Sentinel" POMs only** (e.g. Total Length, Chest Width, Sleeve Length) highly predictive of cutting/sewing drift. | Full tech-pack specification ($12\text{ to }25\text{ POMs}$, front and back). |
+| **Physical Garment Handling** | Conveyorized feeding with aerodynamic air-knife flattening; minimal manual intervention. | Ergonomic dual-sided table with standardized lay protocol; human touches screen to verify semantics (A7). |
+| **Abstention Policy** | $< 1\%$ abstention. Questionable units diverted to manual buffer. | $5\%\text{ to }10\%$ selective abstention routed to manual tape check. |
+| **Primary Economic Value** | Immediate real-time SPC: catches cutting-ply knife drift or wash shrinkage drift on Unit #5 instead of Unit #5,000. | Replaces manual tape handling; eliminates transcription errors; generates instant buyer audit certificates. |
 
 ---
 
-## 10. Quantitative Technical Requirements Specification
+## 11. Quantitative Technical Requirements Specification
 
 Based on this metrological analysis, the automated garment measurement system must satisfy the following explicit engineering requirements:
 
@@ -363,4 +400,4 @@ Based on this metrological analysis, the automated garment measurement system mu
 | **REQ-5: Selective Abstention & Gross Error Capping** | The algorithm must output an epistemic confidence/quality score. Gross error rate ($|e| > t/2$) on accepted measurements must be strictly bounded. | Gross error rate $P(|e| > t/2) \le 0.5\%$; Abstention rate $\le 10\%$ in S-AQL. |
 | **REQ-6: Traceable Scale & Calibration** | System spatial calibration must be verified against physical reference standards traceable to national length standards. | Verified via in-situ calibrated grid/scale bars certified to ISO/IEC 17025. |
 | **REQ-7: Audit of Prior Shrinkage** | Algorithmic priors (CAD templates, shape constraints) must not attenuate true out-of-tolerance manufacturing defects. | Regression slope $\beta \in [0.95, 1.05]$ when evaluating seeded defects. |
-| **REQ-8: Cycle Time** | End-to-end capture, feature extraction, GPS evaluation, and decision output. | $\le 10\text{ seconds}$ computation time; handling $\le 45\text{ seconds}$ in S-AQL. |
+| **REQ-8: Cycle Time** | End-to-end capture, feature extraction, GPS evaluation, and decision output. | S-Inline: $\le 8\text{ s}$ total; S-AQL: $\le 35\text{ s}$ handling + compute. |

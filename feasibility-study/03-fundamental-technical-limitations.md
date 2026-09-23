@@ -110,11 +110,7 @@ The table below calculates the resulting dimensional error over a $700\text{ mm}
 #### Critical Metrological Deduction:
 If an optical system is mounted at a convenient height ($1.0\text{ m}$ to $1.5\text{ m}$) and calibrated purely against a 2D planar target on the table surface ($Z=0$), **garment thickness alone induces $2\text{ mm to }8\text{ mm}$ of systematic, position-dependent scaling error**!
 - This error is entirely non-random and does not average out over repeated measurements.
-- **Engineering Remedies:**
-  1. Elevate camera height to $H \ge 2.2\text{ m}$ (limits scale error to $<0.15\%$).
-  2. Implement telecentric line-scan imaging (zero perspective parallax).
-  3. Couple 2D imaging with a low-cost coarse height map ($1\text{ mm}$ height accuracy) to mathematically orthorectify planar coordinates:
-     $$\mathbf{x}_{\text{corrected}} = \mathbf{x}_{\text{apparent}} \cdot \left(1 - \frac{h(\mathbf{x})}{H}\right)$$
+- **Why Pure 2D Imaging Fails:** You cannot eliminate perspective error without measuring the elevation $h(x, y)$ of each landmark. This is why Claude's proposal to discard all 3D sensing is scientifically flawed: **topographic height data is mathematically required to orthorectify 2D planar measurements**.
 
 ---
 
@@ -168,7 +164,7 @@ Evaluating this formula across sensor configurations demonstrates the catastroph
 #### Metrological Conclusion:
 Summing unregularized 3D surface point clouds directly inflates lengths by tens to hundreds of millimetres. 
 To eliminate this inflation, the 3D surface must be aggressively smoothed using spatial low-pass filtering or spline fitting. However, **low-pass filtering smooths out the actual fabric wrinkles the 3D camera was purchased to measure**!
-Therefore, 3D point cloud surface integration is a regularisation trap. 3D depth data is useful *only* for coarse height gating and perspective correction, not for direct surface integration.
+Therefore, 3D point cloud surface integration is a regularisation trap. Depth data is useful *strictly* for elevation orthorectification, never for raw geodesic path summation.
 
 ---
 
@@ -231,11 +227,6 @@ $$S \approx L \left[ 1 + \left(\frac{\pi A}{\lambda}\right)^2 \right]$$
 
 $$\text{Fractional Projected Length Loss: } \frac{S - L}{S} \approx \left(\frac{\pi A}{\lambda}\right)^2$$
 
-#### Mathematical Formulation for an Isolated Fold Ridge:
-For an isolated triangular or buckled fabric ridge of height $a$ standing on a base width $b$, the true arc length across the fold is $2\sqrt{(b/2)^2 + a^2}$.
-The hidden fabric length $\Delta L_{\text{ridge}}$ is `[I]`:
-$$\Delta L_{\text{ridge}} = 2\sqrt{\left(\frac{b}{2}\right)^2 + a^2} - b$$
-
 #### Quantitative Shortening Table:
 The table below calculates the exact projected length lost across realistic wrinkle profiles `[I]`:
 
@@ -252,19 +243,25 @@ The table below calculates the exact projected length lost across realistic wrin
 #### Crucial QC Implication:
 - **Wrinkles Produce a Strictly One-Sided Asymmetric Bias:** Wrinkles **always shorten** projected dimensions; they can never make a garment appear longer.
 - In a factory QC setting, this creates a severe systematic error: **conforming garments are falsely classified as out-of-tolerance (short), while oversized garments are masked as conforming**!
-- This validates the Size AI vendor finding that *"major wrinkles can shift measurements by 2–3 cm"* `[SizeAI-cheatsheet]`.
-- **Engineering Verdict:** Wrinkles cannot be mathematically "unfolded" from 2D images. The system must incorporate active physical flattening (vacuum hold-down) or automated photometric flatness detection that rejects the lay and prompts the operator to re-smooth.
 
 ---
 
-### 3.3 Seam Roll and Tubular Body Flattening
-On circular-knit garments (T-shirts, polo shirts, fleece hoodies), the body is knitted as a continuous seamless tube or assembled with overlock side seams:
-- **The Fold Line is an Artifact of Flattening:** On a seamless tube, the outer silhouette boundaries are simply the 180° fold lines of the fabric. Where that fold falls relative to the knit wales is entirely arbitrary, depending on how the operator laid down the garment.
-- **Seam Roll:** On a side-seamed garment, if the front and back plies are laid unevenly, the side seams roll forward or backward away from the fold line.
-  - If both side seams roll forward by $r = 3.0\text{ mm}$ onto the front chest, the visible distance between the side seams is shortened by:
-    $$\Delta W = 2r = 6.0\text{ mm}$$
-  - $6.0\text{ mm}$ is **nearly half the total tolerance band ($12.7\text{ mm}$)** on a $\pm 1/4''$ garment `[I]`!
-  - If the tech pack specifies measuring "between seams" (ISO 3759) while the optical system measures "edge-to-edge silhouette" (ISO 18890), a **$6.0\text{ mm}$ discrepancy** occurs on the exact same garment.
+### 3.3 The Physics of Why Open Vacuum Tables Fail on Finished Garments
+
+In Chapter 00, we exposed the technical flaw in Claude's proposal to use perforated vacuum tables (Architecture A6). Here, we formalize the fluid and contact mechanics of why this fails `[I]`:
+
+1. **Air Permeability and Pressure Head Collapse:**
+   - In fluid mechanics, airflow through a porous textile obeys the Darcy-Forchheimer equation:
+     $$\Delta P = \frac{\mu_{\text{air}}}{K} v \cdot t_{\text{fabric}} + \rho_{\text{air}} C v^2 t_{\text{fabric}}$$
+     where $K$ is fabric permeability ($10^{-10}\text{ to }10^{-8}\text{ m}^2$) and $v$ is superficial face velocity.
+   - For standard knitted cotton ($K \approx 5 \times 10^{-9}\text{ m}^2$), a commercial vacuum blower with flow rate $Q = 500\text{ m}^3/\text{h}$ operating over a $1.5\text{ m}^2$ open table generates a pressure drop across the fabric of:
+     $$\Delta P < \mathbf{0.08\text{ kPa}} \ (0.0008\text{ bar})$$
+   - This downward pressure ($80\text{ N/m}^2 \approx 8\text{ gf/cm}^2$) is **two orders of magnitude weaker** than the bending rigidity required to flatten a double-folded denim hem or an ironed cotton crease!
+2. **Local Dimpling Distortion:**
+   - Where the porous knit fabric spans across a $5\text{ mm}$ vacuum hole, the air drag forces the fabric into the hole, creating a microscopic spherical dome (dimpling).
+   - This dimpling pulls fabric inward from the perimeter, **shortening the apparent outer boundary by $1\text{–}3\text{ mm}$** while creating scalloped edge distortions.
+3. **Frictional Normal Force Amplification:**
+   - If vacuum suction is active while an operator attempts to smooth a garment, the effective normal force $N = (mg + \Delta P \cdot A)$ increases friction, **locking in wrinkles and preventing manual relaxation**.
 
 ---
 
@@ -277,122 +274,32 @@ Can the sensor physically observe the features defining garment POMs? An exhaust
 | **High Point Shoulder (HPS) / Side Neck Point (SNP)** | ISO 18890 Code A1; Buyer tech packs | Intersection of shoulder seam line with neck seam line, **"excluding any collar, rib trim, or binding"** `[E, ISO18890]` | **Partially to Fully Occluded** | In crewneck T-shirts, polos, and jackets, the neck rib trim or collar folds over the seam junction. The true SNP landmark lies **underneath** the collar band, hidden from top-down optical sight. |
 | **Armhole Base / Underarm Point** | ISO 18890 Code D2, M1 | Intersection of sleeve underarm seam and body side seam | **Folded and Occluded** | When the sleeve is laid flat, the underarm junction forms a clustered 3D confluence of 4 fabric plies that folds into a curved crease. |
 | **Inseam Crotch Point** | ISO 18890; ISO 3759 | Intersection of four-way crotch seams (front rise, back rise, left/right inseams) | **Heavily Occluded** | In jeans and chinos, the heavy denim fly and crotch seam allowance cluster into a dense $10\text{ mm}$ thick lump folded between the thighs. |
-| **Center Front (CF) / Center Back (CB) Axis** | ISO 18890 Code A2 | Longitudinal axis of garment symmetry | **Virtual / Constructed** | On plain T-shirts, there is no physical mark or seam along CF. The axis must be mathematically constructed by bisecting neck and hem landmarks. |
+| **Curved & Dropped Hems** | Tech packs (e.g. polo tennis tail, shirt tails) | Front hem line vs Back hem line (different curvature and lengths) | **Front Hem Occluded in Transmission** | Under backlight transmission, the longer back tail projects over the shorter front hem. The front hem contour is completely occluded in silhouette! |
 | **Force-Defined Extended Waist** | ISO 18890 Annex A | Elastic waistband pulled to "maximum extension without breaking stitches" | **Physically Unobservable** | Passive cameras cannot measure force or tensile resistance. |
 
-#### Metrological Conclusion:
-The previous team's struggle to find "reference points with high precision" was fundamentally caused by attempting to detect features that are **physically invisible from above**. 
-Software algorithms cannot detect a seam junction hidden beneath a folded collar. For occluded landmarks, the system must either:
-1. Re-define the POM operator to use an observable surrogate (e.g., outer collar silhouette fold instead of hidden seam line); or
-2. Employ transmission multi-spectral backlighting that reveals hidden seam allowance layers through the fabric (Architecture A2).
-
 ---
 
-## 5. Semantic Model Resolution Limits and Prior Bias (Components $u_E$ & $u_F$)
+## 5. Prior Bias: The Affine Strain Tensor Formulation
 
-### 5.1 Spatial Quantization in Deep Learning Backbones
-Why did the previous team's keypoint networks fail to achieve sub-millimetre precision?
-Standard computer-vision pose estimation backbones (HRNet, SimpleBaseline, ResNet-FPN) process images through strided convolutional stems to manage GPU memory:
-- **HRNet Input Resolution:** Typically $256 \times 192$ or $384 \times 288$ pixels.
-- **Strided Downsampling:** Input images pass through two $3 \times 3$ convolutions with stride 2, downsampling feature maps by **$4\times$** `[E, HRNet]`.
-- **Heatmap Grid:** A $384 \times 288$ input yields a heatmap of only **$96 \times 72$ cells**.
-- **Spatial Resolution on a Garment:** Over a $1200\text{ mm}$ field, each heatmap cell spans:
-  $$\Delta x_{\text{cell}} = \frac{1200\text{ mm}}{96} = \mathbf{12.5\text{ mm per cell}}$$
-- The uniform quantization standard deviation of a grid cell is:
-  $$\sigma_{\text{quant}} = \frac{\Delta x_{\text{cell}}}{\sqrt{12}} = \frac{12.5\text{ mm}}{3.464} = \mathbf{3.61\text{ mm}}$$
+To prevent the dangerous phenomenon of **shrinkage toward nominal** (Chapter 03 §5.2), CAD pattern data must be utilized strictly as a topological constraint, not a coordinate snapper.
 
-Even with DARK (Distribution-Aware Coordinate Representation) sub-pixel Gaussian peak fitting `[E, DARK]`, the network's localization error is fundamentally constrained by:
-1. Label noise in training annotations ($2\text{ to }5\text{ pixels} \approx 2.5\text{ to }6\text{ mm}$);
-2. Coarse heatmap resolution;
-3. Heavy-tailed predictions on out-of-distribution fabric styles.
+Let a 2D CAD pattern piece be defined in undeformed material coordinates $\mathbf{X} = (X, Y)^T \in \Omega_0$.
+When sewn and laid on the table, the fabric undergoes a deformation mapping $\mathbf{x} = \phi(\mathbf{X}) \in \mathbb{R}^2$.
+The **deformation gradient tensor** is:
+$$\mathbf{F} = \frac{\partial \mathbf{x}}{\partial \mathbf{X}} = \begin{bmatrix} \frac{\partial x}{\partial X} & \frac{\partial x}{\partial Y} \\ \frac{\partial y}{\partial X} & \frac{\partial y}{\partial Y} \end{bmatrix}$$
 
----
-
-### 5.2 The Danger of Prior Bias: Shrinkage Toward Nominal
-
-When a computer vision pipeline incorporates CAD templates, deformable mesh registration, or heuristic "keypoint correction algorithms", it introduces a **geometric prior**.
-
-Let the true physical dimension of a defective garment be $y_{\text{true}} = \mu_{\text{nominal}} + \delta$, where $\delta = +15\text{ mm}$ (a severe out-of-tolerance defect).
-Let the system compute a regularized estimate $\hat{y}$ balancing noisy visual evidence $y_{\text{obs}}$ against a CAD prior $y_{\text{nominal}}$:
-$$\hat{y} = (1 - \lambda) y_{\text{obs}} + \lambda y_{\text{nominal}}, \quad \lambda \in [0, 1]$$
+The Green-Lagrange **finite strain tensor** $\mathbf{E}$ measures true physical stretching independent of rigid-body rotation:
+$$\mathbf{E} = \frac{1}{2} \left( \mathbf{F}^T \mathbf{F} - \mathbf{I} \right)$$
 
 ```
-                   THE SHRINKAGE HAZARD IN QC
-                       
-      Defective Part                 Acceptance Zone
-         True Value                 [ -t       +t ]
-             ●                             │
-             │                             │
-             │◄─── Regularization Bias ────┤
-             │     (Shrinkage toward CAD)  │
-             ▼                             ▼
-       Reported Value ──────────────► Appears "In-Spec"!
-        (False Accept)                (Undetected Defect)
+        UNDEFORMED PATTERN (CAD)            DEFORMED GARMENT ON TABLE
+        ┌─────────────────────────┐          ┌───────────────────────────┐
+        │   E_XX = 0, E_YY = 0    │   ──►    │  E_XX = +3.2% (Stretched) │
+        │   (Rigid Nominal)       │  Strain  │  E_XY = -1.8% (Sheared)   │
+        └─────────────────────────┘          └───────────────────────────┘
 ```
 
-- In general computer vision (e.g., rendering virtual avatars), regularization is desirable because it enforces visually pleasing symmetry and smoothness.
-- **In Industrial Metrology, Prior Shrinkage is Fatal:** If $\lambda = 0.30$, a $+15\text{ mm}$ manufacturing defect is reported as:
-  $$\hat{y} = 0.70 \cdot (15\text{ mm}) + 0.30 \cdot (0\text{ mm}) = +10.5\text{ mm}$$
-  The defect is shrunk by $4.5\text{ mm}$, pulling an out-of-spec garment into the pass zone!
-- **Mandatory Metrological Safeguard:** Any candidate architecture utilizing CAD templates or shape constraints must be audited with **seeded out-of-tolerance garments**. In a regression of measured deviation versus true physical deviation:
-  $$\Delta y_{\text{measured}} = \beta \cdot \Delta y_{\text{reference}} + \alpha$$
-  The slope must strictly satisfy **$\beta \in [0.95, 1.05]$**. Any system with $\beta < 0.95$ is guilty of shrinkage toward nominal and must be disqualified `[I]`.
-
----
-
-## 6. Comprehensive Error Classification Matrix
-
-The table below synthesizes the root causes of garment measurement errors, categorizing which engineering levers can eliminate them and identifying the irreducible physical floor `[I]`:
-
-| Error Source | Category | Reduced by Better AI Models? | Reduced by Better Optics/Sensors? | Reduced by Physical Fixtures/State Control? | Reduced by Rewriting POM Definitions? | Irreducible Physical Floor |
-|---|---|---|---|---|---|---|
-| **Pixel Quantization & Sensor Noise** | Sensing ($u_C$) | Sub-pixel fitting | High-res sensor ($\ge 24\text{ MP}$) | — | — | $<0.05\text{ mm}$ (Negligible) |
-| **Lens Distortion & Calibration Scale** | Sensing ($u_C$) | Distortion models | Low-distortion optics | In-situ certified scale artefacts | — | $<0.10\text{ mm}$ (Solvable) |
-| **Perspective Parallax ($h/H$)** | Sensing ($u_C$) | Height orthorectification | Greater height ($H \ge 2.2\text{ m}$) or Line-scan | Compression platen (flattens relief) | — | $<0.20\text{ mm}$ with height map |
-| **3D Depth Noise Length Inflation** | Sensing ($u_C$) | Regularization (destroys wrinkles) | Sub-millimetre depth precision | Flattens wrinkles physically | Define POM as planar projected distance | Must be avoided by design |
-| **Silhouette Boundary Fuzz & Fold Radius**| Feature Extraction ($u_D$) | Edge profile modeling | Backlight transmission illumination | Edge clamping | Specify edge operator (e.g. outermost silhouette) | $\approx 0.2\text{ to }0.5\text{ mm}$ (Fabric thickness dependent) |
-| **Seam Visibility (Low Contrast / Dark Thread)** | Feature Extraction ($u_D$) | Ridge filtering | Multi-angle raking LED illumination | — | Declare seam vs fold explicitly | Ambiguous cases must trigger abstention |
-| **Wrong Feature Identified (Gross Error)** | Semantic ($u_E$) | Better model + Abstention | High optical resolution | Standardized lay orientation | — | Rare, bounded by abstention |
-| **Soft Landmark Localization Dispersion** | Definitional / Semantic ($u_A/u_E$) | **NO** (AI plateaus at label variance) | — | — | **YES: Complete GPS Operators** | Residual expert spread ($\approx 0.5\text{ mm}$) |
-| **Handling In-Plane Strain / Shear** | Garment State ($u_B$) | **NO** (Cannot observe hidden strain) | — | **Vacuum table / Restrained protocol** | Specify restrained state (ISO 10579) | Fabric tensile hysteresis ($\approx 0.5\text{ to }1.5\text{ mm}$) |
-| **Wrinkle-Induced Foreshortening** | Garment State ($u_B$) | Photometric flatness gating | Raking light wrinkle detection | **Perforated vacuum table** | Set maximum allowable wrinkle height | Residual micro-ripples ($\approx 0.3\text{ to }0.8\text{ mm}$) |
-| **Seam Roll on Folded Bodies** | Garment State / Def ($u_B/u_A$) | Detect roll offset | Multi-spectral seam imaging | Lay protocol (align seams to edge) | Declare seam-to-seam vs fold-to-fold | Seam twisting spirality ($\approx 1.0\text{ mm}$) |
-| **Hygral Expansion / Moisture Swelling** | Environmental ($u_B$) | — | — | Climate conditioning (ISO 139) | Specify conditioning state | Natural fiber swelling ($0.5\%\text{ to }1.5\%$) |
-| **Force-Defined Waist Stretch** | Definitional ($u_A$) | **NO** | Passive vision cannot measure | **Actuated tensile fixture** | Specify exact tensile force (N) | Requires active mechanical fixture |
-
----
-
-## 7. Inverted Uncertainty Budget: What Would Have to Be True?
-
-Rather than guessing system accuracy, precision metrology inverts the uncertainty equation: given an industrial tolerance target, **what is the maximum variance each component is permitted to contribute?**
-
-### Case 1: Major Body Dimensions ($\pm 1/2'' \approx \pm 12.7\text{ mm}$, Total Band $T = 25.4\text{ mm}$)
-Target: Combined standard uncertainty $u_c \le 1.50\text{ mm}$ (satisfies VDA 5 $Q_{MP} \le 24\%$, AIAG $\%GRR \approx 35\%$).
-Assuming sensing ($u_C \approx 0.25\text{ mm}$) and feature extraction ($u_D \approx 0.35\text{ mm}$) are well-engineered `[I]`:
-
-$$u_A^2 + u_B^2 + u_E^2 \le u_c^2 - u_C^2 - u_D^2 = 1.50^2 - 0.25^2 - 0.35^2 = 2.25 - 0.0625 - 0.1225 = 2.065\text{ mm}^2$$
-
-$$\sqrt{u_A^2 + u_B^2 + u_E^2} \le \mathbf{1.44\text{ mm}}$$
-
-#### Viable Allocations:
-- **Scenario Alpha (Careful Manual Lay):**
-  Definitional $u_A = 0.8\text{ mm}$, State $u_B = 1.0\text{ mm}$, Semantic $u_E = 0.5\text{ mm} \implies u_c = 1.45\text{ mm}$ (**FEASIBLE**).
-- **Scenario Beta (Unconstrained Lay, Poor Definition):**
-  Definitional $u_A = 1.8\text{ mm}$, State $u_B = 2.5\text{ mm}$, Semantic $u_E = 1.5\text{ mm} \implies u_c = 3.44\text{ mm}$ (**FAILS QC**).
-
----
-
-### Case 2: Fit-Critical Contours ($\pm 1/4'' \approx \pm 6.35\text{ mm}$, Total Band $T = 12.7\text{ mm}$)
-Target: Combined standard uncertainty $u_c \le 0.80\text{ mm}$ (satisfies VDA 5 $Q_{MP} \le 25\%$).
-Allowable variance budget for definition, state, and semantics `[I]`:
-
-$$u_A^2 + u_B^2 + u_E^2 \le 0.80^2 - 0.20^2 - 0.25^2 = 0.64 - 0.04 - 0.0625 = 0.5375\text{ mm}^2$$
-
-$$\sqrt{u_A^2 + u_B^2 + u_E^2} \le \mathbf{0.73\text{ mm}}$$
-
-#### Metrological Verdict:
-To inspect garments to $\pm 1/4''$ tolerances, the combined dispersion of the definition ($u_A$) and the physical garment state ($u_B$) must not exceed **$0.73\text{ mm}$**.
-- This is physically impossible under an unconstrained hand-smoothed flat lay.
-- **Meeting $\pm 1/4''$ tolerances is achievable IF AND ONLY IF:**
-  1. The POM is anchored on high-contrast, non-occluded edges or rigid seams (eliminating $u_A$);
-  2. The garment state is physically constrained via active vacuum hold-down or compression platen (driving $u_B \le 0.5\text{ mm}$).
+#### The Deformation-Invariant QC Rule:
+Instead of forcing observed contours to match the nominal CAD shape, the system computes the local strain components $E_{XX}$ (warp strain), $E_{YY}$ (weft strain), and $E_{XY}$ (shear strain) across the fabric surface:
+1. If $\text{Tr}(\mathbf{E}) > 0.04$ ($>4\%$ tensile strain), the system detects that the operator **over-stretched the garment during smoothing**, triggering an automated lay invalidation!
+2. If $\mathbf{E} \approx \mathbf{0}$, the garment is confirmed in a relaxed state, allowing sub-pixel GPS measurement to execute without regularization bias `[I]`.
